@@ -211,6 +211,6 @@ public:
 //                                                      //
 //////////////////////////////////////////////////////////
 
-#include <BB_ADX_EXPERT/Parameters_public.mqh>
+#include <OPR_Bot/Parameters_public.mqh>
 
-#include <BB_ADX_EXPERT/Parameters_private.mqh>
+#include <OPR_Bot/Parameters_private.mqh>

@@ -42,7 +42,10 @@ private:
                          const STRUCT_STRATEGY &i_param);
     bool    OrderSELLSTOP(const string       i_StrategyName,
                           const STRUCT_STRATEGY &i_param);                      
-
+    bool    OrderBUYLIMIT(const string        i_StrategyName,
+                         const STRUCT_STRATEGY &i_param);
+    bool    OrderSELLLIMIT(const string       i_StrategyName,
+                          const STRUCT_STRATEGY &i_param); 
 //==========================================
 //--- PUBLIC
 //==========================================
@@ -98,6 +101,7 @@ bool CBroker::SendOrder(const string i_StrategyName, const STRUCT_STRATEGY &i_pa
             LOG.INFO(l_Header +
                      " : SIMU ACHAT : Entrée : " + DoubleToString(l_Tick.ask, MONEY.GetDigit()) +
                      " , StopLoss : "   + DoubleToString(i_param.StopLoss   , MONEY.GetDigit()) +
+                     " , TakeProfit : " + DoubleToString(i_param.TakeProfit , MONEY.GetDigit()) +
                      " , Lot : "        + DoubleToString(i_param.Size       , MONEY.GetDigitLot()),
                      __FUNCTION__ );
         }
@@ -106,6 +110,7 @@ bool CBroker::SendOrder(const string i_StrategyName, const STRUCT_STRATEGY &i_pa
             LOG.INFO(l_Header +
                      " : SIMU VENTE : Entrée : " + DoubleToString(l_Tick.bid, MONEY.GetDigit()) +
                      " , StopLoss : "   + DoubleToString(i_param.StopLoss   , MONEY.GetDigit()) +
+                     " , TakeProfit : " + DoubleToString(i_param.TakeProfit , MONEY.GetDigit()) +
                      " , Lot : "        + DoubleToString(i_param.Size       , MONEY.GetDigitLot()),
                      __FUNCTION__ );
         }
@@ -432,8 +437,9 @@ bool CBroker::OrderBUYMARKET(const string i_StrategyName, const STRUCT_STRATEGY 
     l_Request.type       = ORDER_TYPE_BUY;           // type de l'ordre
     l_Request.price      = l_Tick.ask;               // prix marché au moment de l'envoi
     l_Request.sl         = i_param.StopLoss;         // StopLoss
+    l_Request.tp         = i_param.TakeProfit;       // TakeProfit
     l_Request.deviation  = I_Deviation;              // déviation du prix autorisée
-    l_Request.comment    = "OPR-BUY-MARKET";         // commentaire
+    l_Request.comment    = "BUY-MARKET";             // commentaire
     l_Request.magic      = K_Magic + I_Robot_ID;     // MagicNumber de la position
 
     // Gestion des erreurs
@@ -478,14 +484,14 @@ bool CBroker::OrderBUYMARKET(const string i_StrategyName, const STRUCT_STRATEGY 
                          l_Tick.ask,
                          I_Deviation,
                          i_param.StopLoss,
-                         0.0,
-                         "OPR-BUY-MARKET",
+                         i_param.TakeProfit,
+                         "BUY-MARKET",
                          K_Magic + I_Robot_ID);
     // Gestion des erreurs
     //--------------------
     if (l_Ticket > 0)
     {
-        STRAT.SetTicket(i_param.No_detection, l_Ticket);  // ✅ CORRIGÉ : était START.SetTicket
+        STRAT.SetTicket(i_param.No_detection, l_Ticket);
     }
     else
     {
@@ -501,7 +507,8 @@ bool CBroker::OrderBUYMARKET(const string i_StrategyName, const STRUCT_STRATEGY 
     //------------------------------
     LOG.INFO(l_Header + " : 🚀 BUY MARCHÉ #" + IntegerToString(l_Ticket) +
              " | Prix : "  + DoubleToString(l_Tick.ask,       MONEY.GetDigit()) +
-             " | SL : "    + DoubleToString(i_param.StopLoss, MONEY.GetDigit()), __FUNCTION__);
+             " | SL : "    + DoubleToString(i_param.StopLoss, MONEY.GetDigit()) +
+             " | TP : "    + DoubleToString(i_param.TakeProfit, MONEY.GetDigit()), __FUNCTION__);
     return(true);
 }
 
@@ -557,8 +564,9 @@ bool CBroker::OrderSELLMARKET(const string i_StrategyName, const STRUCT_STRATEGY
     l_Request.type       = ORDER_TYPE_SELL;          // type de l'ordre
     l_Request.price      = l_Tick.bid;               // prix marché au moment de l'envoi
     l_Request.sl         = i_param.StopLoss;         // StopLoss
+    l_Request.tp         = i_param.TakeProfit;       // TakeProfit
     l_Request.deviation  = I_Deviation;              // déviation du prix autorisée
-    l_Request.comment    = "OPR-SELL-MARKET";        // commentaire
+    l_Request.comment    = "SELL-MARKET";            // commentaire
     l_Request.magic      = K_Magic + I_Robot_ID;     // MagicNumber de la position
 
     // Gestion des erreurs
@@ -603,14 +611,14 @@ bool CBroker::OrderSELLMARKET(const string i_StrategyName, const STRUCT_STRATEGY
                          l_Tick.bid,
                          I_Deviation,
                          i_param.StopLoss,
-                         0.0,
-                         "OPR-SELL-MARKET",
+                         i_param.TakeProfit,
+                         "SELL-MARKET",
                          K_Magic + I_Robot_ID);
     // Gestion des erreurs
     //--------------------
     if (l_Ticket > 0)
     {
-        STRAT.SetTicket(i_param.No_detection, l_Ticket);  // ✅ CORRIGÉ : était START.SetTicket
+        STRAT.SetTicket(i_param.No_detection, l_Ticket);
     }
     else
     {
@@ -626,7 +634,8 @@ bool CBroker::OrderSELLMARKET(const string i_StrategyName, const STRUCT_STRATEGY
     //------------------------------
     LOG.INFO(l_Header + " : 🚀 SELL MARCHÉ #" + IntegerToString(l_Ticket) +
              " | Prix : "  + DoubleToString(l_Tick.bid,       MONEY.GetDigit()) +
-             " | SL : "    + DoubleToString(i_param.StopLoss, MONEY.GetDigit()), __FUNCTION__);
+             " | SL : "    + DoubleToString(i_param.StopLoss, MONEY.GetDigit()) +
+             " | TP : "    + DoubleToString(i_param.TakeProfit, MONEY.GetDigit()), __FUNCTION__);
     return(true);
 }
 
@@ -678,8 +687,9 @@ bool CBroker::OrderBUYSTOP(const string i_StrategyName, const STRUCT_STRATEGY &i
     l_Request.type       = ORDER_TYPE_BUY_STOP;         // type de l'ordre
     l_Request.price      = i_param.Entry;               // prix de l'ordre
     l_Request.sl         = i_param.StopLoss;            // StopLoss
+    l_Request.tp         = i_param.TakeProfit;          // TakeProfit
     l_Request.deviation  = I_Deviation;                 // déviation du prix autorisée
-    l_Request.comment    = "OPR-BUY-STOP";              // commentaire 
+    l_Request.comment    = "BUY-STOP";                  // commentaire 
     l_Request.magic      = K_Magic + I_Robot_ID;        // MagicNumber de la position
 
     // Gestion des erreurs
@@ -709,7 +719,8 @@ bool CBroker::OrderBUYSTOP(const string i_StrategyName, const STRUCT_STRATEGY &i
     //------------------------------
     LOG.INFO(l_Header + " : Ouverture ticket BUY STOP #" + IntegerToString(l_Ticket) +
              " | Entry : " + DoubleToString(i_param.Entry,      MONEY.GetDigit()) +
-             " | SL : "    + DoubleToString(i_param.StopLoss,   MONEY.GetDigit()), __FUNCTION__);
+             " | SL : "    + DoubleToString(i_param.StopLoss,   MONEY.GetDigit()) +
+             " | TP : "    + DoubleToString(i_param.TakeProfit, MONEY.GetDigit()), __FUNCTION__);
     return(true);
 }
 
@@ -761,8 +772,9 @@ bool CBroker::OrderSELLSTOP(const string i_StrategyName, const STRUCT_STRATEGY &
     l_Request.type       = ORDER_TYPE_SELL_STOP;        // type de l'ordre
     l_Request.price      = i_param.Entry;               // prix de l'ordre
     l_Request.sl         = i_param.StopLoss;            // StopLoss
+    l_Request.tp         = i_param.TakeProfit;          // TakeProfit
     l_Request.deviation  = I_Deviation;                 // déviation du prix autorisée
-    l_Request.comment    = "OPR-SELL-STOP";             // commentaire 
+    l_Request.comment    = "SELL-STOP";                 // commentaire 
     l_Request.magic      = K_Magic + I_Robot_ID;        // MagicNumber de la position
 
     // Gestion des erreurs
@@ -792,6 +804,177 @@ bool CBroker::OrderSELLSTOP(const string i_StrategyName, const STRUCT_STRATEGY &
     //------------------------------
     LOG.INFO(l_Header + " : Ouverture ticket SELL STOP #" + IntegerToString(l_Ticket) +
              " | Entry : " + DoubleToString(i_param.Entry,      MONEY.GetDigit()) +
-             " | SL : "    + DoubleToString(i_param.StopLoss,   MONEY.GetDigit()), __FUNCTION__);
+             " | SL : "    + DoubleToString(i_param.StopLoss,   MONEY.GetDigit()) +
+             " | TP : "    + DoubleToString(i_param.TakeProfit, MONEY.GetDigit()), __FUNCTION__);
+    return(true);
+}
+
+//+------------------------------------------------------------+
+//| OrderBUYLIMIT                                              |
+//| Envoi d'un ordre BUY_LIMIT                                 |
+//| INPUT:                                                     |
+//| Données de la détection                                    |
+//| OUTPUT:                                                    |
+//| TRUE si l'ordre a été bien exécuté                         |
+//+------------------------------------------------------------+
+bool CBroker::OrderBUYLIMIT(const string i_StrategyName, const STRUCT_STRATEGY &i_param)
+{
+    // Variables locales
+    //------------------
+    MqlTick l_Tick;
+    int     l_Ticket;
+    string  l_Header;
+
+    // Lit les dernières données du marché
+    //------------------------------------
+    if (!SymbolInfoTick(Symbol(), l_Tick))
+    {
+        LOG.WARNING("Impossible de lire les données du marché ! Detection annulée !", __FUNCTION__);
+        return(false);
+    }    
+
+    // Construit l'entête des messages
+    //--------------------------------
+    l_Header = LOG.InfosLogOperation(i_StrategyName, i_param.No_detection, Symbol());
+
+    // Variable locale
+    //----------------
+    MqlTradeRequest    l_Request;
+    MqlTradeCheckResult l_Check;
+    MqlTradeResult     l_Result;
+
+    // Prépare l'envoi des ordres
+    //---------------------------
+    ZeroMemory(l_Request);
+    ZeroMemory(l_Check);
+    ZeroMemory(l_Result);
+    
+    // Envoi de l'ordre
+    //-----------------
+    l_Request.action     = TRADE_ACTION_PENDING;        // type de l'opération de trading    
+    l_Request.symbol     = Symbol();                    // symbole 
+    l_Request.volume     = i_param.Size;                // volume de la position
+    l_Request.type       = ORDER_TYPE_BUY_LIMIT;        // type de l'ordre
+    l_Request.price      = i_param.Entry;               // prix de l'ordre
+    l_Request.sl         = i_param.StopLoss;            // StopLoss
+    l_Request.tp         = i_param.TakeProfit;          // TakeProfit
+    l_Request.deviation  = I_Deviation;                 // déviation du prix autorisée
+    l_Request.comment    = "BUY-LIMIT";                 // commentaire 
+    l_Request.magic      = K_Magic + I_Robot_ID;        // MagicNumber de la position
+
+    // Gestion des erreurs
+    //--------------------
+    ResetLastError();
+    if (!OrderCheck(l_Request, l_Check))
+    {
+        LOG.ERROR("OrdreCheck : " + ErrorToString(GetLastError()) + " - " + ErrorToString(l_Check.retcode) + "'" + l_Check.comment + "'", __FUNCTION__);
+        return(false);
+    }
+
+    // Envoi l'ordre
+    //--------------
+    ResetLastError();
+    if (!OrderSend(l_Request, l_Result))
+    {
+        LOG.ERROR("Ordre non accepté : " + ErrorToString(l_Result.retcode), __FUNCTION__);
+        return(false);
+    }
+    
+    // Enregistre le ticket
+    //---------------------
+    l_Ticket = (int)l_Result.order;
+    STRAT.SetTicket(i_param.No_detection, l_Ticket);
+
+    // Indique les infos d'ouverture
+    //------------------------------
+    LOG.INFO(l_Header + " : Ouverture ticket BUY LIMIT #" + IntegerToString(l_Ticket) +
+             " | Entry : " + DoubleToString(i_param.Entry,      MONEY.GetDigit()) +
+             " | SL : "    + DoubleToString(i_param.StopLoss,   MONEY.GetDigit()) +
+             " | TP : "    + DoubleToString(i_param.TakeProfit, MONEY.GetDigit()), __FUNCTION__);
+    return(true);
+}
+
+//+------------------------------------------------------------+
+//| OrderSELLLIMIT                                             |
+//| Envoi d'un ordre SELL_LIMIT                                |
+//| INPUT:                                                     |
+//| Données de la détection                                    |
+//| OUTPUT:                                                    |
+//| TRUE si l'ordre a été bien exécuté                         |
+//+------------------------------------------------------------+
+bool CBroker::OrderSELLLIMIT(const string i_StrategyName, const STRUCT_STRATEGY &i_param)
+{
+    // Variables locales
+    //------------------
+    MqlTick l_Tick;
+    int     l_Ticket;
+    string  l_Header;
+
+    // Lit les dernières données du marché
+    //------------------------------------
+    if (!SymbolInfoTick(Symbol(), l_Tick))
+    {
+        LOG.WARNING("Impossible de lire les données du marché ! Detection annulée !", __FUNCTION__);
+        return(false);
+    }    
+
+    // Construit l'entête des messages
+    //--------------------------------
+    l_Header = LOG.InfosLogOperation(i_StrategyName, i_param.No_detection, Symbol());
+
+    // Variable locale
+    //----------------
+    MqlTradeRequest    l_Request;
+    MqlTradeCheckResult l_Check;
+    MqlTradeResult     l_Result;
+
+    // Prépare l'envoi des ordres
+    //---------------------------
+    ZeroMemory(l_Request);
+    ZeroMemory(l_Check);
+    ZeroMemory(l_Result);
+    
+    // Envoi de l'ordre
+    //-----------------
+    l_Request.action     = TRADE_ACTION_PENDING;        // type de l'opération de trading    
+    l_Request.symbol     = Symbol();                    // symbole 
+    l_Request.volume     = i_param.Size;                // volume de la position
+    l_Request.type       = ORDER_TYPE_SELL_LIMIT;       // type de l'ordre
+    l_Request.price      = i_param.Entry;               // prix de l'ordre
+    l_Request.sl         = i_param.StopLoss;            // StopLoss
+    l_Request.tp         = i_param.TakeProfit;          // TakeProfit
+    l_Request.deviation  = I_Deviation;                 // déviation du prix autorisée
+    l_Request.comment    = "SELL-LIMIT";                // commentaire 
+    l_Request.magic      = K_Magic + I_Robot_ID;        // MagicNumber de la position
+
+    // Gestion des erreurs
+    //--------------------
+    ResetLastError();
+    if (!OrderCheck(l_Request, l_Check))
+    {
+        LOG.ERROR("OrdreCheck : " + ErrorToString(GetLastError()) + " - " + ErrorToString(l_Check.retcode) + "'" + l_Check.comment + "'", __FUNCTION__);
+        return(false);
+    }
+
+    // Envoi l'ordre
+    //--------------
+    ResetLastError();
+    if (!OrderSend(l_Request, l_Result))
+    {
+        LOG.ERROR("Ordre non accepté : " + ErrorToString(l_Result.retcode), __FUNCTION__);
+        return(false);
+    }
+    
+    // Enregistre le ticket
+    //---------------------
+    l_Ticket = (int)l_Result.order;
+    STRAT.SetTicket(i_param.No_detection, l_Ticket);
+
+    // Indique les infos d'ouverture
+    //------------------------------
+    LOG.INFO(l_Header + " : Ouverture ticket SELL LIMIT #" + IntegerToString(l_Ticket) +
+             " | Entry : " + DoubleToString(i_param.Entry,      MONEY.GetDigit()) +
+             " | SL : "    + DoubleToString(i_param.StopLoss,   MONEY.GetDigit()) +
+             " | TP : "    + DoubleToString(i_param.TakeProfit, MONEY.GetDigit()), __FUNCTION__);
     return(true);
 }

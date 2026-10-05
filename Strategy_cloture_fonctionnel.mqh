@@ -23,8 +23,8 @@
 //                 I N C L U D E S                      //
 //                                                      //
 //////////////////////////////////////////////////////////
-#include <BB_ADX_EXPERT/Datas.mqh>
-#include <BB_ADX_EXPERT/DST.mqh>
+#include <OPR_Bot/Datas.mqh>
+#include <OPR_Bot/DST.mqh>
 
 //////////////////////////////////////////////////////////
 //                                                      //

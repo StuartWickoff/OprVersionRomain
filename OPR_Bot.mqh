@@ -44,18 +44,17 @@
 //              I N C L U D E S                         //
 //                                                      //
 //////////////////////////////////////////////////////////
-#include <BB_ADX_EXPERT/Type.mqh>
-#include <BB_ADX_EXPERT/DST.mqh>
-#include <BB_ADX_EXPERT/Tools.mqh>
-#include <BB_ADX_EXPERT/Log.mqh>
-#include <BB_ADX_EXPERT/Alert.mqh>
-#include <BB_ADX_EXPERT/Parameters.mqh>
-#include <BB_ADX_EXPERT/Context.mqh>
-#include <BB_ADX_EXPERT/Money.mqh>
-#include <BB_ADX_EXPERT/Visu.mqh>
-#include <BB_ADX_EXPERT/Monitoring.mqh>
-#include <BB_ADX_EXPERT/Broker.mqh>
-#include <BB_ADX_EXPERT/Strategy.mqh>
+#include <OPR_Bot/Type.mqh>
+#include <OPR_Bot/Tools.mqh>
+#include <OPR_Bot/Log.mqh>
+#include <OPR_Bot/Alert.mqh>
+#include <OPR_Bot/Parameters.mqh>
+#include <OPR_Bot/Context.mqh>
+#include <OPR_Bot/Money.mqh>
+#include <OPR_Bot/Visu.mqh>
+#include <OPR_Bot/Monitoring.mqh>
+#include <OPR_Bot/Broker.mqh>
+#include <OPR_Bot/Strategy.mqh>
 
 
 //////////////////////////////////////////////////////////
@@ -81,8 +80,9 @@ input bool                I_Notif_Alert          = true;          // Alerte noti
 input ENUM_LOG_LEVEL      I_Log_Level            = eL_All;        // Niveau des logs
 input ENUM_VISU           I_Visu_Height          = eV_Nothing;    // Taille affichage états
 input uint                I_Deviation            = 10;            // Slippage autorisé
+input uint                K_CStrat_SMA_Short     = 20;            // Période EMA courte (M5)
+input uint                K_CStrat_SMA_Long      = 50;            // Période EMA longue (M5)
 input string              I_Symbol_Name          = "US100m";      // Symbole exact dans MT5
-input ENUM_SYMBOL_KEY     I_Symbol_Key           = eSK_NASDAQ;    // Actif tradé
 enum ENUM_SL_TYPE
 {
     eSL_Mid          ,  // Milieu du range
@@ -93,24 +93,15 @@ enum ENUM_SL_TYPE
 input ENUM_SL_TYPE        K_SL_Type              = eSL_LowHigh;  // Type de Stop Loss
 input double              K_SL_Buffer_Ratio      = 0.10;         // Buffer SL (% de la range)
 input ENUM_TIMEFRAMES     K_ORB_TF               = PERIOD_M15;   // Timeframe bougie ORB
-input double              K_TP_Override          = 0.0;          // TP désactivé dans cette version
+input double              K_TP_Override          = 1.0;          // TP ratio
 input double              K_BE_Override          = 0.25;         // BE ratio
 input double              K_MaxSlippage_Points   = 5.0;         // Slippage max accepté pour bascule marché (pts)
 input double              K_MinRange_ATR_Ratio   = 0.5;          // Range min = X × ATR(14)
 input ENUM_APPLIED_PRICE  K_ST_Source            = PRICE_MEDIAN;
-input uint                I_ST_Plateau_MinCount  = 3;            // n = Nombre minimum d'occurrences pour confirmer plateau
-input double              K_Max_Risk_Auth        = 2.5;          // Risque max autorisé pour fallback MinLot (%)
-
-// Mode de gestion du Stop Loss après l'entrée ORB.
-//   SL_MODE_R_BE       : ancien mode BreakEven par ratio R (ApplyBreakEven)
-//   SL_MODE_ST_PLATEAU : nouveau mode protection par plateaux SuperTrend M1
-// Les deux modes NE doivent JAMAIS tourner simultanément sur la même position.
-enum ENUM_SL_MANAGEMENT_MODE
-{
-   SL_MODE_R_BE        = 0,   // BreakEven par ratio R (ancien)
-   SL_MODE_ST_PLATEAU  = 1,   // Plateaux SuperTrend M1 (nouveau)
-};
-input ENUM_SL_MANAGEMENT_MODE I_SL_Management_Mode = SL_MODE_ST_PLATEAU; // Mode de gestion du SL post-entrée
+input double              K_Max_Risk_Auth        = 2.5;         // Risque max autorisé pour fallback MinLot (%)
+input double              K_BE_Buffer            = 2.0;         // Buffer pour le BE
+input double              K_Offset               = 1.0;          // Offset anti-fausse cassure
+input bool                K_Apply_BE             = true;        // Appliquer BE
  
 
 //============================================
@@ -283,11 +274,12 @@ void OnTimer()
    //-----------------------------------------------
    RegularTreatments();
 
-   // ✅ ManagePositions toujours appelé : la zone NEWS est gérée EN INTERNAL
-   // (annulation pending + gestion position existante + protection SL plateau).
-   // ReadyForStrategy ne filtre QUE les nouvelles entrées (Detection).
-   //------------------------------------------------------------------------
-   STRAT.ManagePositions();
+   // ✅ Annulation des ordres même sans tick (marché gelé pendant news)
+   //-------------------------------------------------------------------
+   if (MONITORING.ReadyForStrategy())
+   {
+       STRAT.ManagePositions();
+   }
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -305,19 +297,17 @@ void OnTick()
    //-----------------------------------------------
    RegularTreatments();
 
-   // ✅ ManagePositions toujours appelé (même en zone NEWS) :
-   //    - annulation pending orders en zone NEWS
-   //    - sortie EMA M1 reste active
-   //    - protection SL par plateaux ST M1 reste active
-   // La zone NEWS ne bloque QUE les nouvelles entrées (Detection ci-dessous).
-   //-------------------------------------------------------------------------
+   // Traite la stratégie si les contextes sont bons
+   //-----------------------------------------------
+   if (!MONITORING.ReadyForStrategy()) return;
+   
+   // ✅ GESTION DES POSITIONS À CHAQUE TICK (BE, Trailing Stop, etc.)
+   //------------------------------------------------------------------
+
    STRAT.ManagePositions();
 
-   // Traite la détection de nouvelles opportunités uniquement si tous les
-   // contextes (technique, finance, horaire, hors news) sont réunis.
-   //--------------------------------------------------------------------
-   if (!MONITORING.ReadyForStrategy()) return;
-
+   // Analyse si une détection est nouvelle pour la stratégie
+   //-------------------------------------------------------
    if (CONTEXT.NewCandle())
    {
       STRAT.Detection();

@@ -154,27 +154,3 @@ struct STRUCT_STRATEGY
    double        TakeProfit;
    bool          IsMarketOrder;   // Bascule dynamique : true = ordre au marché, false = ordre stop
 };
-
-// ✅ STRUCTURE POUR DÉTECTION DES PLATEAUX SUPERTREND M1
-// Anti-doublon : géré uniquement par m_LastProcessedM1Bar au niveau CStrategy
-// (une seule observation par bougie M1 clôturée, lue en shift=1).
-// Les champs last_st_value / last_read_time ont été retirés (code mort).
-//----------------------------------------------------------------------
-struct STRUCT_ST_PLATEAU
-{
-   bool     valid;              // Plateau confirmé?
-   int      level;              // E(ST) = partie entière de la valeur ST
-   double   first_value;        // Première valeur réelle observée (immuable pendant la vie du candidat)
-   int      count;              // Nombre d'occurrences (1 par bougie M1 clôturée)
-};
-
-// ✅ STRUCTURE POUR HISTORIQUE DES PLATEAUX
-//-------------------------------------------
-struct STRUCT_ST_HISTORY
-{
-   STRUCT_ST_PLATEAU current_candidate;     // Candidat en construction
-   STRUCT_ST_PLATEAU last_confirmed;        // Dernier plateau confirmé (cible pour le déplacement SL)
-   ENUM_TREND        expected_direction;    // Direction attendue (eT_Bull pour BUY, eT_Bear pour SELL)
-   bool              active;                // Tracking en cours?
-};
-

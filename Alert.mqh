@@ -22,7 +22,7 @@
 //|
 //| Dépendances :
 //|
-//| - Fichier BB_ADX_expert.mqx : Contient la source compilable
+//| - Fichier OPR_Bot.mqx : Contient la source compilable
 //| - Fichier Tools.mqh         : Contient les fonctions de mise en forme
 //| - Fichier Type.mqh          : Contient l'énuméré des niveaux
 //| - Fichier Log.mqh           : Contient la gestion des logs
